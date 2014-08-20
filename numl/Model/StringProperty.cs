@@ -1,3 +1,6 @@
+// file:	Model\StringProperty.cs
+//
+// summary:	Implements the string property class
 using System;
 using System.IO;
 using numl.Utils;
@@ -9,6 +12,7 @@ using System.Xml.Serialization;
 
 namespace numl.Model
 {
+    /// <summary>Enumeration describing how to split a string property.</summary>
     public enum StringSplitType
     {
         /// <summary>
@@ -21,9 +25,11 @@ namespace numl.Model
         Word
     }
 
+    /// <summary>Represents a string property.</summary>
     [XmlRoot("StringProperty"), Serializable]
     public class StringProperty : Property
     {
+        /// <summary>Default constructor.</summary>
         public StringProperty()
             : base()
         {
@@ -36,13 +42,23 @@ namespace numl.Model
             Type = typeof(string);
             Discrete = true;
         }
-
+        /// <summary>How to separate words (defaults to a space)</summary>
+        /// <value>The separator.</value>
         public string Separator { get; set; }
+        /// <summary>How to split text.</summary>
+        /// <value>The type of the split.</value>
         public StringSplitType SplitType { get; set; }
+        /// <summary>generated dictionary (using bag of words model)</summary>
+        /// <value>The dictionary.</value>
         public string[] Dictionary { get; set; }
+        /// <summary>Exclusion set (stopword removal)</summary>
+        /// <value>The exclude.</value>
         public string[] Exclude { get; set; }
+        /// <summary>Treat as enumeration.</summary>
+        /// <value>true if as enum, false if not.</value>
         public bool AsEnum { get; set; }
-
+        /// <summary>Expansion length (total distinct words)</summary>
+        /// <value>The length.</value>
         public override int Length
         {
             get
@@ -50,7 +66,8 @@ namespace numl.Model
                 return AsEnum ? 1 : Dictionary.Length;
             }
         }
-
+        /// <summary>Expansion column names.</summary>
+        /// <returns>List of distinct words and positions.</returns>
         public override IEnumerable<string> GetColumns()
         {
             if (AsEnum)
@@ -59,7 +76,8 @@ namespace numl.Model
                 foreach (var s in Dictionary)
                     yield return s;
         }
-
+        /// <summary>Preprocess data set to create dictionary.</summary>
+        /// <param name="examples">.</param>
         public override void PreProcess(IEnumerable<object> examples)
         {
             var q = from s in examples
@@ -80,7 +98,9 @@ namespace numl.Model
                 }
             }
         }
-
+        /// <summary>Convert from number to string.</summary>
+        /// <param name="val">Number.</param>
+        /// <returns>String.</returns>
         public override object Convert(double val)
         {
             if (AsEnum)
@@ -88,7 +108,10 @@ namespace numl.Model
             else
                 return val.ToString();
         }
-
+        /// <summary>Convert string to list of numbers.</summary>
+        /// <exception cref="InvalidOperationException">Thrown when the requested operation is invalid.</exception>
+        /// <param name="o">in string.</param>
+        /// <returns>lazy list of numbers.</returns>
         public override IEnumerable<double> Convert(object o)
         {
             // check for valid dictionary
@@ -110,7 +133,8 @@ namespace numl.Model
                 foreach (double val in StringHelpers.GetWordCount(s, this))
                     yield return val;
         }
-
+        /// <summary>import exclusion list from file.</summary>
+        /// <param name="file">.</param>
         public void ImportExclusions(string file)
         {
             // add exclusions
@@ -140,7 +164,9 @@ namespace numl.Model
             else
                 Exclude = new string[] { };
         }
-
+        /// <summary>Generates an object from its XML representation.</summary>
+        /// <param name="reader">The <see cref="T:System.Xml.XmlReader" /> stream from which the object is
+        /// deserialized.</param>
         public override void ReadXml(XmlReader reader)
         {
             base.ReadXml(reader);
@@ -161,7 +187,9 @@ namespace numl.Model
             for (int i = 0; i < Exclude.Length; i++)
                 Exclude[i] = reader.ReadElementString("item");
         }
-
+        /// <summary>Converts an object into its XML representation.</summary>
+        /// <param name="writer">The <see cref="T:System.Xml.XmlWriter" /> stream to which the object is
+        /// serialized.</param>
         public override void WriteXml(XmlWriter writer)
         {
             base.WriteXml(writer);

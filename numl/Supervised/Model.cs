@@ -1,4 +1,7 @@
-﻿using System;
+﻿// file:	Supervised\Model.cs
+//
+// summary:	Implements the model class
+using System;
 using System.IO;
 using numl.Utils;
 using numl.Model;
@@ -11,12 +14,20 @@ using System.Xml.Schema;
 
 namespace numl.Supervised
 {
+    /// <summary>A model.</summary>
     public abstract class Model : IModel, IXmlSerializable
     {
+        /// <summary>Gets or sets the descriptor.</summary>
+        /// <value>The descriptor.</value>
         public Descriptor Descriptor { get; set; }
-
+        /// <summary>Predicts the given o.</summary>
+        /// <param name="y">The Vector to process.</param>
+        /// <returns>An object.</returns>
         public abstract double Predict(Vector y);
-
+        /// <summary>Predicts the given o.</summary>
+        /// <exception cref="InvalidOperationException">Thrown when the requested operation is invalid.</exception>
+        /// <param name="o">The object to process.</param>
+        /// <returns>An object.</returns>
         public object Predict(object o)
         {
             if (Descriptor.Label == null)
@@ -28,83 +39,80 @@ namespace numl.Supervised
             Ject.Set(o, Descriptor.Label.Name, result);
             return o;
         }
-
+        /// <summary>Predicts the given o.</summary>
+        /// <tparam name="T">Generic type parameter.</tparam>
+        /// <param name="o">The object to process.</param>
+        /// <returns>A T.</returns>
         public T Predict<T>(T o)
         {
             return (T)Predict((object)o);
         }
 
+        // ----- saving stuff
+        /// <summary>Model persistance.</summary>
+        /// <param name="file">The file to load.</param>
         public virtual void Save(string file)
         {
-            using (var stream = File.OpenWrite(file))
-                Save(stream);
+            Xml.Save(file, this, GetType());
         }
-
+        /// <summary>Saves the given stream.</summary>
+        /// <param name="stream">The stream to load.</param>
         public virtual void Save(Stream stream)
         {
-            XmlSerializer serializer = new XmlSerializer(GetType());
-            XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
-            ns.Add("", "");
-
-            serializer.Serialize(stream, this, ns);
+            Xml.Save(stream, this, GetType());
         }
-
+        /// <summary>Converts this object to an XML.</summary>
+        /// <returns>This object as a string.</returns>
         public virtual string ToXml()
         {
-            XmlSerializer serializer = new XmlSerializer(GetType());
-            XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
-            StringWriter textWriter = new StringWriter();
-            ns.Add("", "");
-
-            serializer.Serialize(textWriter, this, ns);
-            return textWriter.ToString();
+            return Xml.ToXmlString(this, GetType());
         }
-
+        /// <summary>Loads the given stream.</summary>
+        /// <param name="file">The file to load.</param>
+        /// <returns>An IModel.</returns>
         public virtual IModel Load(string file)
         {
-            using (var stream = File.OpenRead(file))
-                return Load(stream);
+            return (IModel)Xml.Load(file, GetType());
         }
-
+        /// <summary>Loads the given stream.</summary>
+        /// <param name="stream">The stream to load.</param>
+        /// <returns>An IModel.</returns>
         public virtual IModel Load(Stream stream)
         {
-            XmlSerializer serializer = new XmlSerializer(GetType());
-            var o = serializer.Deserialize(stream);
-            return (IModel)o;
+            return (IModel)Xml.Load(stream, GetType());
         }
-
+        /// <summary>Loads an XML.</summary>
+        /// <param name="xml">The XML.</param>
+        /// <returns>The XML.</returns>
         public virtual IModel LoadXml(string xml)
         {
-            TextReader reader = new StringReader(xml);
-            XmlSerializer serializer = new XmlSerializer(GetType());
-            var o = serializer.Deserialize(reader);
-            return (IModel)o;
+            return (IModel)Xml.LoadXmlString(xml, GetType());
         }
-
-        public virtual void WriteXml<T>(XmlWriter writer, T thing)
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(T));
-            XmlSerializerNamespaces ns = new XmlSerializerNamespaces();
-            ns.Add("", "");
-            serializer.Serialize(writer, thing, ns);
-        }
-
-        public virtual T ReadXml<T>(XmlReader reader)
-        {
-            XmlSerializer dserializer = new XmlSerializer(typeof(T));
-            T item = (T)dserializer.Deserialize(reader);
-            // move to next thing
-            reader.Read();
-            return item;
-        }
-
+        /// <summary>
+        /// This method is reserved and should not be used. When implementing the IXmlSerializable
+        /// interface, you should return null (Nothing in Visual Basic) from this method, and instead, if
+        /// specifying a custom schema is required, apply the
+        /// <see cref="T:System.Xml.Serialization.XmlSchemaProviderAttribute" /> to the class.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Xml.Schema.XmlSchema" /> that describes the XML representation of the
+        /// object that is produced by the
+        /// <see cref="M:System.Xml.Serialization.IXmlSerializable.WriteXml(System.Xml.XmlWriter)" />
+        /// method and consumed by the
+        /// <see cref="M:System.Xml.Serialization.IXmlSerializable.ReadXml(System.Xml.XmlReader)" />
+        /// method.
+        /// </returns>
         public XmlSchema GetSchema()
         {
             return null;
         }
-
+        /// <summary>Converts an object into its XML representation.</summary>
+        /// <param name="writer">The <see cref="T:System.Xml.XmlWriter" /> stream to which the object is
+        /// serialized.</param>
         public abstract void WriteXml(XmlWriter writer);
-
+        /// <summary>Generates an object from its XML representation.</summary>
+        /// <param name="reader">The <see cref="T:System.Xml.XmlReader" /> stream from which the object is
+        /// deserialized.</param>
         public abstract void ReadXml(XmlReader reader);
     }
 }
